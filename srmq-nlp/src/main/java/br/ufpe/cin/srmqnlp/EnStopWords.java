@@ -20,6 +20,10 @@ public class EnStopWords {
 		"}", "'", "\"", "-", "?"
 		};
 	
+	static {
+		Arrays.sort(EN_STOP_WORDS);
+	}
+	
 	private Set<Integer> stopWordIndices;
 	
 	private Set<String> stopWordSet;
@@ -37,5 +41,9 @@ public class EnStopWords {
 	
 	public boolean isStopWordIndex(Integer id) {
 		return this.stopWordIndices.contains(id);
+	}
+	
+	public static boolean isStopWord(String word) {
+		return Arrays.binarySearch(EN_STOP_WORDS, word) >= 0;
 	}
 }

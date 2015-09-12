@@ -15,7 +15,6 @@ import java.util.Scanner;
 
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
-import org.rosuda.REngine.REngineException;
 import org.rosuda.REngine.Rserve.RConnection;
 import org.rosuda.REngine.Rserve.RserveException;
 
@@ -26,11 +25,14 @@ public class SimpleLSADissimGenerator {
 	public static void main(String[] args) {
 		int i;
 		Integer k = 5000;
+		String distance = "euclidean";
 		for(i = 0; i < args.length; ++i) {
 			if(args[i].equals("-v") || args[i].equals("--verbosis")) {
 				VERBOSIS = true;
 			} else if(args[i].equals("--topk")) {
 				k = Integer.parseInt(args[++i]);
+			} else if(args[i].equals("--dist")) {
+				distance = args[++i];
 			} else {
 				break;
 			}
@@ -50,7 +52,6 @@ public class SimpleLSADissimGenerator {
 		}
 		
 		List<File> allFiles = getFiles(parentDir);
-		
 		try {
 			Vocabulary vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
 			EnStopWords stopWords = new EnStopWords(vocab);
@@ -59,11 +60,41 @@ public class SimpleLSADissimGenerator {
 			stopWords = null;
 			TermDocMatrix tdMatrix = new TermDocMatrix(wordsId, allFiles);
 			RConnection rConn = new RConnection();
-			rConn.voidEval("library(\"lsa\")");
-			REXP termDocMtx = REXP.createDoubleMatrix(tdMatrix.getMatrix());
+			rConn.voidEval("library(\"lsa\");library(\"proxy\")");
+			REXP termDocMtx = REXP.createDoubleMatrix(tdMatrix.wf().idf().getMatrix());
 			rConn.assign("tdmat", termDocMtx);
 			termDocMtx = null;
-			final REXP r = rConn.parseAndEval("tdmat <- lw_bintf(tdmat) * gw_idf(tdmat); tdmat <- lsa(tdmat); tdmat <- dist(t(as.textmatrix(tdmat)))");
+			rConn.voidEval("tdmat <- lsa(tdmat)");
+			if(distance.equals("cosine")) {
+				rConn.voidEval("library(\"inline\")");
+				distance = "cosineDist";
+				String[] code = {"src <- '" +
+								"Rcpp::NumericVector xa(a); " +
+								"Rcpp::NumericVector xb(b); " +
+								"int n = xa.size(); " +
+								"double sumAiBi = 0.0, aiSq = 0.0, biSq = 0.0; " +
+								"for (int i = 2; i < n; i++) { " +
+									"sumAiBi += xa[i] * xb[i]; " +
+									"aiSq += xa[i] * xa[i]; " +
+									"biSq += xb[i] * xb[i]; " +
+								"} " +
+								"const double cosine = sumAiBi / (sqrt(aiSq)*sqrt(biSq)); " +
+								"const double cosineDist =  1.0 - (1.0 + cosine)*0.5; " +
+								"return Rcpp::wrap(cosineDist);" +
+								"'",
+								"cosineDist <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
+								"pr_DB$set_entry(FUN = cosineDist, names = c(\"cosineDist\"))",
+								"rm(src)"};
+				for(String codeLine : code) {
+					rConn.voidEval(codeLine);
+				}
+//				rConn.voidEval("eucnorm <- function(x) sqrt(sum(x^2))" + 
+//								"cosfun <- function(x,y) 0.5+((x %*% y) / (2*eucnorm(x)*eucnorm(y)));" +
+//								"pr_DB$set_entry(FUN=cosfun, names=c(\"customCosine\"), distance=FALSE, type=\"metric\", loop=TRUE," +
+//								"C_FUN=FALSE, abcd=FALSE, formula=\"0.5 + xy / (2||x||||y||)\"" +
+//								"tdmat <- dist(t(as.textmatrix(tdmat)), FUN=cosfun)");
+			}
+			rConn.voidEval("tdmat <- dist(t(as.textmatrix(tdmat)), method=\""+ distance + "\")");
 			double[][] dmatrix = rConn.eval("as.matrix(tdmat)").asDoubleMatrix();
 			for(double[] row : dmatrix) {
 				for(i = 0; i < row.length-1; ++i) {
@@ -76,15 +107,13 @@ public class SimpleLSADissimGenerator {
 			System.err.println("Error reading vocabulary file " + CWEmbeddingWriter.CW_WORDS + ".");
 		} catch (RserveException e) {
 			e.printStackTrace();
-		} catch (REngineException e) {
-			e.printStackTrace();
 		} catch (REXPMismatchException e) {
 			e.printStackTrace();
 		}
 		System.exit(0);
 	}
 	
-	public static List<File> getFiles(File dir) {
+	private static List<File> getFiles(File dir) {
 		File[] subFiles = dir.listFiles();
 		List<File> clusters = new ArrayList<File>(subFiles.length);
 		for (int i = 0; i < subFiles.length; i++) {
@@ -108,7 +137,7 @@ public class SimpleLSADissimGenerator {
 		return allFiles;
 	}
 	
-	public static class EntryIntIntComp implements Comparator<Entry<Integer, Integer>> {
+	private static class EntryIntIntComp implements Comparator<Entry<Integer, Integer>> {
 
 		public int compare(Entry<Integer, Integer> o1, Entry<Integer, Integer> o2) {
 			int ret = 0;
@@ -124,7 +153,7 @@ public class SimpleLSADissimGenerator {
 		
 	}
 	
-	public static Integer[] topKVocab(List<File> files, Vocabulary vocab, EnStopWords stopWords, int k) {
+	private static Integer[] topKVocab(List<File> files, Vocabulary vocab, EnStopWords stopWords, int k) {
 		Map<Integer, Integer> wordCount = new HashMap<Integer, Integer>(vocab.size());
 		Scanner in = null;
 		Integer wordId;

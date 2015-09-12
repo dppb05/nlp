@@ -1,11 +1,17 @@
 package br.ufpe.cin.srmqnlp;
 
+//import java.io.BufferedInputStream;
+//import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+//import java.io.FileInputStream;
+//import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+//import java.nio.channels.FileChannel;
+//import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -78,6 +84,11 @@ public class RecursiveCWIndexWriter {
 					BufferedReader bufr = new BufferedReader(new FileReader(file));
 					BufferedWriter bufw = new BufferedWriter(new FileWriter(new File(baseOutputPath.getCanonicalPath() + File.separator + name)));
 					cwWriter.cwIndicesForDocument(bufr, bufw);
+//					FileChannel source = new FileInputStream(file).getChannel();
+//					FileChannel dest = new FileOutputStream(new File(baseOutputPath.getCanonicalPath() + File.separator + name)).getChannel();
+//					dest.transferFrom(source, 0, source.size());
+//					source.close();
+//					dest.close();
 					bufw.close();
 					bufr.close();
 				}

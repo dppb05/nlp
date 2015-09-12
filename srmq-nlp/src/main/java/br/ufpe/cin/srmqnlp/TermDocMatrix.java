@@ -12,18 +12,10 @@ import java.util.Set;
 
 public class TermDocMatrix {
 	private double[][] matrix;
-	private int nrow;
-	private int ncol;
 	
 	public TermDocMatrix(Integer[] wordsId, List<File> files) {
 		this.matrix = new double[wordsId.length][files.size()];
-		this.nrow = wordsId.length;
-		this.ncol = files.size();
 		Arrays.sort(wordsId);
-//		Map<Integer, Integer> rows = new HashMap<Integer, Integer>(wordsId.length);
-//		for(int i = 0; i < wordsId.length; ++i) {
-//			rows.put(wordsId[i], i);
-//		}
 		Scanner in = null;
 		Integer wordId;
 		int row;
@@ -46,6 +38,31 @@ public class TermDocMatrix {
 				}
 			}
 		}
+	}
+	
+	public TermDocMatrix wf() {
+		for(int i = 0; i < this.matrix.length; ++i) {
+			for(int j = 0; j < this.matrix[i].length; ++j) {
+				if(this.matrix[i][j] > 0) {
+					this.matrix[i][j] = 1 + Math.log(this.matrix[i][j]);
+				}
+			}
+		}
+		return this;
+	}
+	
+	public TermDocMatrix idf() {
+		double df;
+		for(int i = 0; i < this.matrix.length; ++i) {
+			df = 0;
+			for(int j = 0; j < this.matrix[i].length; ++j) {
+				df += this.matrix[i][j];
+			}
+			for(int j = 0; j < this.matrix[i].length; ++j) {
+				this.matrix[i][j] *= Math.log(this.matrix[i].length / df);
+			}
+		}
+		return this;
 	}
 	
 	public void print() {
