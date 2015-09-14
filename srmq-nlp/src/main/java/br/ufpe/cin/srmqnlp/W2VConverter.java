@@ -64,7 +64,7 @@ public class W2VConverter {
 			if(VERBOSIS) {
 				System.out.println("Checking top "+ k + " words from corpus...");
 			}
-			topWords = topKWords(corpus, k, true);
+			topWords = TopKVocab.topKWords(corpus, k, true);
 			Arrays.sort(topWords);
 		}
 		long wordsWritten = 0;
@@ -153,89 +153,8 @@ public class W2VConverter {
 		return buf.toString();
 	}
 	
-	private static String[] topKWords(File corpus, int k, boolean stopWords) {
-		Map<String, Integer> wordCount = new HashMap<String, Integer>();
-		Scanner in = null;
-		String word;
-		List<File> files = FileUtils.getFiles(corpus, false);
-		for(File f : files) {
-			try {
-				in = new Scanner(f);
-				while(in.hasNext()) {
-					word = in.next();
-					if(stopWords && !EnStopWords.isStopWord(word)) {
-						Integer val = wordCount.get(word);
-						if(val == null) {
-							wordCount.put(word, 1);
-						} else {
-							wordCount.put(word, val + 1);
-						}
-					}
-				}
-			} catch (FileNotFoundException e) {
-				System.out.printf("File %s not found. Skipping.\n", f.getAbsolutePath());
-			} finally {
-				in.close();
-				in = null;
-			}
-		}
-		@SuppressWarnings("unchecked")
-		Entry<String, Integer>[] topWords = (Entry<String, Integer>[]) new Entry[k];
-		int topWordsSize = 0;
-		int i;
-		EntryStrIntComp comp = new EntryStrIntComp();
-		for(Entry<String, Integer> e : wordCount.entrySet()) {
-			if(topWordsSize < topWords.length) {
-				topWords[topWordsSize++] = e;
-				if(topWordsSize == topWords.length) {
-					Arrays.sort(topWords, comp);
-					if(DEBUG) {
-						System.out.print("( ");
-						for(Entry<String, Integer> en : topWords) {
-							System.out.printf("[%s,%d] ", en.getKey(), en.getValue());
-						}
-						System.out.printf(") %d\n", topWordsSize);
-					}
-				}
-			} else {
-				if(topWords[0].getValue() < e.getValue()) {
-					for(i = 1; i < topWords.length && topWords[i].getValue() < e.getValue(); ++i);
-					--i;
-					for(int j = 0; j < i; ++j) {
-						topWords[j] = topWords[j+1];
-					}
-					topWords[i] = e;
-					if(DEBUG) {
-						System.out.print("( ");
-						for(Entry<String, Integer> en : topWords) {
-							System.out.printf("[%s,%d] ", en.getKey(), en.getValue());
-						}
-						System.out.printf(") %d\n", topWordsSize);
-					}
-				}
-			}
-		}
-		String[] ret = new String[topWordsSize];
-		for(i = 0; i < ret.length; ++i) {
-			ret[i] = topWords[i].getKey();
-		}
-		return ret;
-	}
 	
-	private static class EntryStrIntComp implements Comparator<Entry<String, Integer>> {
-
-		public int compare(Entry<String, Integer> o1, Entry<String, Integer> o2) {
-			int ret = 0;
-			if(o1.getKey() != o2.getKey()) {
-				if(o1.getValue() != o2.getValue()) {
-					ret = o1.getValue() - o2.getValue();
-				} else {
-					ret = o1.getKey().compareTo(o2.getKey());
-				}
-			}
-			return ret;
-		}
-		
-	}
+	
+	
 
 }

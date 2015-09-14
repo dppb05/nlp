@@ -88,11 +88,6 @@ public class SimpleLSADissimGenerator {
 				for(String codeLine : code) {
 					rConn.voidEval(codeLine);
 				}
-//				rConn.voidEval("eucnorm <- function(x) sqrt(sum(x^2))" + 
-//								"cosfun <- function(x,y) 0.5+((x %*% y) / (2*eucnorm(x)*eucnorm(y)));" +
-//								"pr_DB$set_entry(FUN=cosfun, names=c(\"customCosine\"), distance=FALSE, type=\"metric\", loop=TRUE," +
-//								"C_FUN=FALSE, abcd=FALSE, formula=\"0.5 + xy / (2||x||||y||)\"" +
-//								"tdmat <- dist(t(as.textmatrix(tdmat)), FUN=cosfun)");
 			}
 			rConn.voidEval("tdmat <- dist(t(as.textmatrix(tdmat)), method=\""+ distance + "\")");
 			double[][] dmatrix = rConn.eval("as.matrix(tdmat)").asDoubleMatrix();
