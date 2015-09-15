@@ -10,7 +10,10 @@ import java.util.Map;
 
 public class Vocabulary {
 	private Map<String, Integer> wordToIndex;
+	private Locale locale;
+	
 	public Vocabulary(File wordListFile, Locale locale) throws IOException {
+		this.locale = locale;
 		int lineNum = 1;
 		BufferedReader bufw = new BufferedReader(new FileReader(wordListFile));
 		String line;
@@ -25,6 +28,10 @@ public class Vocabulary {
 		bufw.close();
 	}
 	
+	public boolean contains(String word) {
+		return this.wordToIndex.containsKey(word);
+	}
+	
 	public int size() {
 		return this.wordToIndex.size();
 	}
@@ -35,5 +42,9 @@ public class Vocabulary {
 	
 	public Integer getId(String word) {
 		return this.wordToIndex.get(word);
+	}
+	
+	public Locale getLocale() {
+		return this.locale;
 	}
 }

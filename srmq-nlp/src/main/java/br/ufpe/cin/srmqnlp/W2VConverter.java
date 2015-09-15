@@ -64,7 +64,7 @@ public class W2VConverter {
 			if(VERBOSIS) {
 				System.out.println("Checking top "+ k + " words from corpus...");
 			}
-			topWords = TopKVocab.topKWords(corpus, k, true);
+			topWords = TopKVocab.topKWords(corpus, null, k, true);
 			Arrays.sort(topWords);
 		}
 		long wordsWritten = 0;

@@ -55,7 +55,7 @@ public class SimpleLSADissimGenerator {
 		try {
 			Vocabulary vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
 			EnStopWords stopWords = new EnStopWords(vocab);
-			Integer[] wordsId = topKVocab(allFiles, vocab, stopWords, k);
+			Integer[] wordsId = topKVocab(allFiles, stopWords, k);
 			vocab = null;
 			stopWords = null;
 			TermDocMatrix tdMatrix = new TermDocMatrix(wordsId, allFiles);
@@ -148,8 +148,8 @@ public class SimpleLSADissimGenerator {
 		
 	}
 	
-	private static Integer[] topKVocab(List<File> files, Vocabulary vocab, EnStopWords stopWords, int k) {
-		Map<Integer, Integer> wordCount = new HashMap<Integer, Integer>(vocab.size());
+	private static Integer[] topKVocab(List<File> files, EnStopWords stopWords, int k) {
+		Map<Integer, Integer> wordCount = new HashMap<Integer, Integer>();
 		Scanner in = null;
 		Integer wordId;
 		for(File f : files) {
