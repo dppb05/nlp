@@ -1,17 +1,23 @@
 package br.ufpe.cin.srmqnlp;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Scanner;
+import java.util.Set;
 
 import org.rosuda.REngine.REXP;
 import org.rosuda.REngine.REXPMismatchException;
@@ -26,6 +32,7 @@ public class SimpleLSADissimGenerator {
 		int i;
 		Integer k = 5000;
 		String distance = "euclidean";
+		File vocabFile = null;
 		for(i = 0; i < args.length; ++i) {
 			if(args[i].equals("-v") || args[i].equals("--verbosis")) {
 				VERBOSIS = true;
@@ -33,6 +40,8 @@ public class SimpleLSADissimGenerator {
 				k = Integer.parseInt(args[++i]);
 			} else if(args[i].equals("--dist")) {
 				distance = args[++i];
+			} else if(args[i].equals("--vocab")) {
+				vocabFile = new File(args[++i]);
 			} else {
 				break;
 			}
@@ -53,42 +62,34 @@ public class SimpleLSADissimGenerator {
 		
 		List<File> allFiles = getFiles(parentDir);
 		try {
-			Vocabulary vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
-			EnStopWords stopWords = new EnStopWords(vocab);
-			Integer[] wordsId = topKVocab(allFiles, stopWords, k);
-			vocab = null;
-			stopWords = null;
-			TermDocMatrix tdMatrix = new TermDocMatrix(wordsId, allFiles);
+			String[] topWords = null;
+			if(vocabFile != null) {
+				Set<String> words = new HashSet<String>();
+				BufferedReader reader = new BufferedReader(new FileReader(vocabFile));
+				String word = reader.readLine();
+				while(word != null) {
+					words.add(word.trim().toLowerCase());
+					word = reader.readLine();
+				}
+				reader.close();
+				topWords = new String[words.size()];
+				words.toArray(topWords);
+			} else {
+				topWords = TopKVocab.topKWords(allFiles, null, k, true);
+				Arrays.sort(topWords);
+				PrintWriter writer = new PrintWriter(new FileOutputStream("/home/diogo/Documents/Universidade/mestrado/data/out.lst"));
+				for(String s : topWords) {
+					writer.write(s + "\n");
+				}
+				writer.close();
+			}
+			TermDocMatrix tdMatrix = new TermDocMatrix(topWords, allFiles);
 			RConnection rConn = new RConnection();
 			rConn.voidEval("library(\"lsa\");library(\"proxy\")");
 			REXP termDocMtx = REXP.createDoubleMatrix(tdMatrix.wf().idf().getMatrix());
 			rConn.assign("tdmat", termDocMtx);
 			termDocMtx = null;
 			rConn.voidEval("tdmat <- lsa(tdmat)");
-			if(distance.equals("cosine")) {
-				rConn.voidEval("library(\"inline\")");
-				distance = "cosineDist";
-				String[] code = {"src <- '" +
-								"Rcpp::NumericVector xa(a); " +
-								"Rcpp::NumericVector xb(b); " +
-								"int n = xa.size(); " +
-								"double sumAiBi = 0.0, aiSq = 0.0, biSq = 0.0; " +
-								"for (int i = 2; i < n; i++) { " +
-									"sumAiBi += xa[i] * xb[i]; " +
-									"aiSq += xa[i] * xa[i]; " +
-									"biSq += xb[i] * xb[i]; " +
-								"} " +
-								"const double cosine = sumAiBi / (sqrt(aiSq)*sqrt(biSq)); " +
-								"const double cosineDist =  1.0 - (1.0 + cosine)*0.5; " +
-								"return Rcpp::wrap(cosineDist);" +
-								"'",
-								"cosineDist <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
-								"pr_DB$set_entry(FUN = cosineDist, names = c(\"cosineDist\"))",
-								"rm(src)"};
-				for(String codeLine : code) {
-					rConn.voidEval(codeLine);
-				}
-			}
 			rConn.voidEval("tdmat <- dist(t(as.textmatrix(tdmat)), method=\""+ distance + "\")");
 			double[][] dmatrix = rConn.eval("as.matrix(tdmat)").asDoubleMatrix();
 			for(double[] row : dmatrix) {
@@ -98,11 +99,11 @@ public class SimpleLSADissimGenerator {
 				System.out.println(row[i]);
 			}
 			rConn.voidEval("rm(tdmat)");
-		} catch (IOException e) {
-			System.err.println("Error reading vocabulary file " + CWEmbeddingWriter.CW_WORDS + ".");
 		} catch (RserveException e) {
 			e.printStackTrace();
 		} catch (REXPMismatchException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
 			e.printStackTrace();
 		}
 		System.exit(0);
@@ -132,82 +133,4 @@ public class SimpleLSADissimGenerator {
 		return allFiles;
 	}
 	
-	private static class EntryIntIntComp implements Comparator<Entry<Integer, Integer>> {
-
-		public int compare(Entry<Integer, Integer> o1, Entry<Integer, Integer> o2) {
-			int ret = 0;
-			if(o1.getKey() != o2.getKey()) {
-				if(o1.getValue() != o2.getValue()) {
-					ret = o1.getValue() - o2.getValue();
-				} else {
-					ret = o1.getKey() - o2.getKey();
-				}
-			}
-			return ret;
-		}
-		
-	}
-	
-	private static Integer[] topKVocab(List<File> files, EnStopWords stopWords, int k) {
-		Map<Integer, Integer> wordCount = new HashMap<Integer, Integer>();
-		Scanner in = null;
-		Integer wordId;
-		for(File f : files) {
-			try {
-				in = new Scanner(f);
-				while(in.hasNextInt()) {
-					wordId = in.nextInt();
-					if((stopWords != null && stopWords.isStopWordIndex(wordId)) || wordId == CWEmbeddingWriter.UNK_WORD_ID) {
-						continue;
-					}
-					Integer val = wordCount.get(wordId);
-					if(val == null) {
-						wordCount.put(wordId, 1);
-					} else {
-						wordCount.put(wordId, val + 1);
-					}
-				}
-			} catch (FileNotFoundException e) {
-				System.out.printf("File %s not found. Skipping.\n", f.getAbsolutePath());
-			} finally {
-				in.close();
-				in = null;
-			}
-		}
-		Entry<Integer, Integer>[] topWords = (Entry<Integer, Integer>[]) new Entry[k];
-		int topWordsSize = 0;
-		int i;
-		for(Entry<Integer, Integer> e : wordCount.entrySet()) {
-			if(topWordsSize < topWords.length) {
-				topWords[topWordsSize++] = e;
-				if(topWordsSize == topWords.length) {
-					Arrays.sort(topWords, new EntryIntIntComp());
-//					System.out.print("( ");
-//					for(Entry<Integer, Integer> en : topWords) {
-//						System.out.printf("[%d,%d] ", en.getKey(), en.getValue());
-//					}
-//					System.out.println(")");
-				}
-			} else {
-				if(topWords[0].getValue() < e.getValue()) {
-					for(i = 1; i < topWords.length && topWords[i].getValue() < e.getValue(); ++i);
-					--i;
-					for(int j = 0; j < i; ++j) {
-						topWords[j] = topWords[j+1];
-					}
-					topWords[i] = e;
-//					System.out.print("( ");
-//					for(Entry<Integer, Integer> en : topWords) {
-//						System.out.printf("[%d,%d] ", en.getKey(), en.getValue());
-//					}
-//					System.out.println(")");
-				}
-			}
-		}
-		Integer[] ret = new Integer[topWordsSize];
-		for(i = 0; i < ret.length; ++i) {
-			ret[i] = topWords[i].getKey();
-		}
-		return ret;
-	}
 }

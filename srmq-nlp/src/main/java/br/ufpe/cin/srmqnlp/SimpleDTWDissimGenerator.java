@@ -66,23 +66,65 @@ public class SimpleDTWDissimGenerator {
 			customDistFunctions.put(meanWfIdfCosineDist, meanWfIdfCosineDistCode);
 		}
 		
+		{
+			String meanWfIdfManhattanDist = "meanWfIdfManhattanDist";
+			String[] meanWfIdfManhattanDistCode = {"src <- '" +  
+												"Rcpp::NumericVector xa(a); " +
+												"Rcpp::NumericVector xb(b); " +
+												"int n = xa.size(); " +
+												"double manDist = 0.0;" +
+												"for (int i = 2; i < n; i++) { " +
+													"if(xb[i] > xa[i]) {" +
+														"manDist += xb[i] - xa[i]; " +
+													"} else { " +
+														"manDist += xa[i] - xb[i]; " +
+													"} " +
+												"} "						   +
+												"const double wfdfA = (xa[0] > 0) ? (1.0 + log(xa[0])) : 0.0; " +
+												"const double wfdfB = (xb[0] > 0) ? (1.0 + log(xb[0])) : 0.0; " +
+												"const double meanWfIdf = ((wfdfA * xa[1]) + (wfdfB * xb[1]))*0.5; " +
+												"return Rcpp::wrap(meanWfIdf * manDist); " +
+												"'",
+											"meanWfIdfManhattanDist <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
+											"pr_DB$set_entry(FUN = meanWfIdfManhattanDist, names = c(\"test_meanWfIdfManhattanDist\", \"meanWfIdfManhattanDist\"))",
+											"rm(src)"};
+			customDistFunctions.put(meanWfIdfManhattanDist, meanWfIdfManhattanDistCode);
+		}
 		
+		{
+			String meanWfIdfChebyshevDist = "meanWfIdfChebyshevDist";
+			String[] meanWfIdfChebyshevDistCode = {"src <- '" +  
+												"Rcpp::NumericVector xa(a); " +
+												"Rcpp::NumericVector xb(b); " +
+												"int n = xa.size(); " +
+												"double chebDist; " +
+												"if(xb[2] > xa[2]) { " +
+													"chebDist = xb[2] - xa[2]; " +
+												"} else { " +
+													"chebDist = xa[2] - xb[2]; " +
+												"} " +
+												"double val;" +
+												"for (int i = 3; i < n; i++) { " +
+													"if(xb[i] > xa[i]) {" +
+														"val = xb[i] - xa[i]; " +
+													"} else { " +
+														"val = xa[i] - xb[i]; " +
+													"} " +
+													"if(val > chebDist) { " +
+														"chebdist = val; " +
+													"} " +
+												"} "						   +
+												"const double wfdfA = (xa[0] > 0) ? (1.0 + log(xa[0])) : 0.0; " +
+												"const double wfdfB = (xb[0] > 0) ? (1.0 + log(xb[0])) : 0.0; " +
+												"const double meanWfIdf = ((wfdfA * xa[1]) + (wfdfB * xb[1]))*0.5; " +
+												"return Rcpp::wrap(meanWfIdf * chebDist); " +
+												"'",
+											"meanWfIdfChebyshevDist <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
+											"pr_DB$set_entry(FUN = meanWfIdfChebyshevDist, names = c(\"test_meanWfIdfChebyshevDist\", \"meanWfIdfChebyshevDist\"))",
+											"rm(src)"};
+			customDistFunctions.put(meanWfIdfChebyshevDist, meanWfIdfChebyshevDistCode);
+		}
 	}
-/*
- library("inline")
- src <- '
-    Rcpp::NumericVector xa(a);
-    Rcpp::NumericVector xb(b);
-    int n = xa.size();
-    double dist = 0.0;
-    for (int i = 0; i < n; i++) {
-	    const double idist = xa[i] - xb[i];
-	    dist += idist*idist;
-    }
-    return Rcpp::wrap(sqrt(dist));
-'
-fun <- cxxfunction(signature(a = "numeric", b = "numeric"), src, plugin="Rcpp")
- */
 	
 public static void main(String[] args) throws IOException, REXPMismatchException, REngineException {
 	if (args.length < 1 || args.length > 3) {
@@ -132,7 +174,7 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 	Vocabulary vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
 	Embeddings embed = new Embeddings(new File(CWEmbeddingWriter.CW_EMBEDDINGS), vocab, 50);
 	EnStopWords stopWords = new EnStopWords(vocab);
-	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(CWEmbeddingWriter.UNK_WORD_ID);
+	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(Constants._UNK_WORD_ID);
 	TokenIndexDocumentProcessor.DFMapping dfMapping = null;
 	if (useCustomTfIdf) dfMapping = docProcessor.generateDFMapping(dfFile);
 	RConnection rConn = new RConnection();

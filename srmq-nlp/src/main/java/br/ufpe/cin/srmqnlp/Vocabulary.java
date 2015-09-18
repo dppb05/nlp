@@ -11,8 +11,9 @@ import java.util.Map;
 public class Vocabulary {
 	private Map<String, Integer> wordToIndex;
 	private Locale locale;
+	private Integer unkWordID;
 	
-	public Vocabulary(File wordListFile, Locale locale) throws IOException {
+	public Vocabulary(File wordListFile, Locale locale, boolean genUnkWordId) throws IOException {
 		this.locale = locale;
 		int lineNum = 1;
 		BufferedReader bufw = new BufferedReader(new FileReader(wordListFile));
@@ -24,6 +25,11 @@ public class Vocabulary {
 				wordToIndex.put(line, lineNum);
 			}
 			lineNum++;
+		}
+		if(genUnkWordId) {
+			this.unkWordID = lineNum;
+		} else {
+			this.unkWordID = null;
 		}
 		bufw.close();
 	}
@@ -37,7 +43,11 @@ public class Vocabulary {
 	}
 	
 	public Vocabulary(File wordListFile) throws IOException {
-		this(wordListFile, Locale.getDefault());
+		this(wordListFile, Locale.getDefault(), false);
+	}
+	
+	public Vocabulary(File wordListFile, boolean genUnkWordId) throws IOException {
+		this(wordListFile, Locale.getDefault(), genUnkWordId);
 	}
 	
 	public Integer getId(String word) {
@@ -46,5 +56,9 @@ public class Vocabulary {
 	
 	public Locale getLocale() {
 		return this.locale;
+	}
+	
+	public Integer getUnkWordId() {
+		return this.unkWordID;
 	}
 }

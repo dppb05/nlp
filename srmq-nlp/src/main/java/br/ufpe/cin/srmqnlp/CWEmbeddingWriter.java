@@ -20,13 +20,22 @@ public class CWEmbeddingWriter
 	public static final String CW_EMBEDDINGS = SENNA_PATH + "/embeddings/embeddings.txt";
 	public static final String CW_WORDS = SENNA_PATH + "/hash/words.lst";
 	
-	public static final int UNK_WORD_ID = 2;
-	
 	private static final Locale locale = Locale.ENGLISH;
 	private Vocabulary vocab;
+	private int UNK_WORD_ID;
+	
+	public CWEmbeddingWriter(Vocabulary vocab) {
+		this.vocab = vocab;
+		if(this.vocab.getUnkWordId() != null) {
+			this.UNK_WORD_ID = this.vocab.getUnkWordId();
+		} else {
+			this.UNK_WORD_ID = Constants._UNK_WORD_ID;
+		}
+	}
 	
 	public CWEmbeddingWriter() throws IOException {
-    	this.vocab = new Vocabulary(new File(CW_WORDS));		
+    	this.vocab = new Vocabulary(new File(CW_WORDS));
+    	this.UNK_WORD_ID = Constants._UNK_WORD_ID;
 	}
 	
     public void cwIndicesForDocument(Reader inputDocument, Writer outputIndices) throws IOException {
@@ -36,7 +45,7 @@ public class CWEmbeddingWriter
     		String tokenString = token.toString().toLowerCase(locale);
     		Integer id = this.vocab.getId(tokenString);
     		if (id == null) {
-    			id = UNK_WORD_ID;
+    			id = this.UNK_WORD_ID;
     		}
     		outputIndices.write(id.toString());
     		outputIndices.write('\n');

@@ -1,22 +1,20 @@
 package br.ufpe.cin.srmqnlp;
 
-//import java.io.BufferedInputStream;
-//import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-//import java.io.FileInputStream;
-//import java.io.FileOutputStream;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-//import java.nio.channels.FileChannel;
-//import java.nio.file.Files;
+import java.nio.channels.FileChannel;
 import java.util.HashSet;
 import java.util.Set;
 
 public class RecursiveCWIndexWriter {
 
+	static boolean writeIdx = false;
 	/**
 	 * 
 	 * @param baseInputPath
@@ -24,12 +22,22 @@ public class RecursiveCWIndexWriter {
 	 * @throws IOException 
 	 */
 	public static void main(String[] args) throws IOException {
-		if (args.length < 2 || args.length > 3) {
-			System.err.println("Should provide 2 arguments <baseInputPath> and <baseOutputPath> OR 3 arguments <baseInputPath> <baseOutputPath> <keep_percent>");
-			System.exit(-1);
+		int i = 0;
+		double keepPercent = 1.0;
+		File vocabFile = null;
+		for(; i < args.length; ++i) {
+			if(args[i].equals("--vocab")) {
+				vocabFile = new File(args[++i]);
+			} else if(args[i].equals("--keep")) {
+				keepPercent = Double.parseDouble(args[++i]);
+			} else if(args[i].equals("--index")) {
+				writeIdx = true;
+			} else {
+				break;
+			}
 		}
-		File baseInputPath = new File(args[0]);
-		File baseOutputPath = new File (args[1]);
+		File baseInputPath = new File(args[i++]);
+		File baseOutputPath = new File (args[i]);
 		if (!baseInputPath.isDirectory()) {
 			System.err.println("baseInputPath should be a directory");
 			System.exit(-2);
@@ -46,16 +54,14 @@ public class RecursiveCWIndexWriter {
 			System.err.println("Application does not have write permissions to baseOutputPath");
 			System.exit(-5);
 		}
-		double keepPercent = 1.0;
-		if (args.length == 3) {
-			keepPercent = Double.parseDouble(args[2]);
-		}
-		CWEmbeddingWriter cwWriter = new CWEmbeddingWriter();
+		
+		CWEmbeddingWriter cwWriter = new CWEmbeddingWriter(new Vocabulary(vocabFile));
 		recursiveProcess(baseInputPath, baseOutputPath, cwWriter, keepPercent);
 
 	}
 
-	private static void recursiveProcess(File baseInputPath, File baseOutputPath, CWEmbeddingWriter cwWriter, double keepPercent) throws IOException {
+	private static void recursiveProcess(File baseInputPath, File baseOutputPath, CWEmbeddingWriter cwWriter,
+			double keepPercent) throws IOException {
 		File[] stuffToProcess = baseInputPath.listFiles();
 		int totalFiles = 0;
 		Set<Integer> elimIndices = null;
@@ -81,16 +87,21 @@ public class RecursiveCWIndexWriter {
 				recursiveProcess(file, newDir, cwWriter, keepPercent); 
 			} else {
 				if (elimIndices == null || !elimIndices.contains(elimFileIndex)) {
-					BufferedReader bufr = new BufferedReader(new FileReader(file));
-					BufferedWriter bufw = new BufferedWriter(new FileWriter(new File(baseOutputPath.getCanonicalPath() + File.separator + name)));
-					cwWriter.cwIndicesForDocument(bufr, bufw);
-//					FileChannel source = new FileInputStream(file).getChannel();
-//					FileChannel dest = new FileOutputStream(new File(baseOutputPath.getCanonicalPath() + File.separator + name)).getChannel();
-//					dest.transferFrom(source, 0, source.size());
-//					source.close();
-//					dest.close();
-					bufw.close();
-					bufr.close();
+					if(writeIdx) {
+						BufferedReader bufr = new BufferedReader(new FileReader(file));
+						BufferedWriter bufw = new BufferedWriter(new FileWriter(new File(baseOutputPath.getCanonicalPath() + File.separator + name)));
+						cwWriter.cwIndicesForDocument(bufr, bufw);
+						bufw.close();
+						bufr.close();
+					} else {
+						FileInputStream fis = new FileInputStream(file);
+						FileChannel source = fis.getChannel();
+						FileOutputStream fos = new FileOutputStream(new File(baseOutputPath.getCanonicalPath() + File.separator + name));
+						FileChannel dest = fos.getChannel();
+						dest.transferFrom(source, 0, source.size());
+						fis.close();
+						fos.close();
+					}
 				}
 				elimFileIndex++;
 			}

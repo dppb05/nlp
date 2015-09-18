@@ -52,7 +52,7 @@ public class TopKVocab {
 			} else if(args[i].equals("--embed")) {
 				embedFile = new File(args[++i]);
 			} else if(args[i].equals("--vec-size")) {
-				vecSize = 50;
+				vecSize = Integer.parseInt(args[++i]);
 			} else {
 				break;
 			}
@@ -126,10 +126,13 @@ public class TopKVocab {
 	}
 	
 	public static String[] topKWords(File corpus, Vocabulary vocab, int k, boolean stopWords) {
+		return topKWords(FileUtils.getFiles(corpus, false), vocab, k, stopWords);
+	}
+	
+	public static String[] topKWords(List<File> files, Vocabulary vocab, int k, boolean stopWords) {
 		Map<String, Integer> wordCount = new HashMap<String, Integer>();
 		BufferedReader reader = null;
 		String word;
-		List<File> files = FileUtils.getFiles(corpus, false);
 		Locale locale = Locale.ENGLISH;
 		if(vocab != null) {
 			locale = vocab.getLocale();

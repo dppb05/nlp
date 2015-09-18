@@ -13,7 +13,7 @@ public static void main(String[] args) throws RserveException, REXPMismatchExcep
 	RConnection c = new RConnection();
 	REXP x = c.eval("R.version.string");
 	System.out.println(x.asString());
-	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(CWEmbeddingWriter.UNK_WORD_ID);
+	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(Constants._UNK_WORD_ID);
 	File tokenDocument = new File("/home/srmq/Dropbox/CIn/research/textmining/devel/data/20_newsgroups-noheaders-indices/alt.atheism/49960");
 	Vocabulary vocab = new Vocabulary(new File("/home/srmq/Dropbox/CIn/research/textmining/devel/senna/hash/words.lst"));
 	Embeddings embed = new Embeddings(new File("/home/srmq/Dropbox/CIn/research/textmining/devel/senna/embeddings/embeddings.txt"), vocab, 50);
