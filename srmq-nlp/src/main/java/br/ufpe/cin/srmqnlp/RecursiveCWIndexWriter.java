@@ -56,7 +56,7 @@ public class RecursiveCWIndexWriter {
 		}
 		CWEmbeddingWriter cwWriter = null;
 		if(vocabFile != null) {
-			cwWriter = new CWEmbeddingWriter(new Vocabulary(vocabFile));
+			cwWriter = new CWEmbeddingWriter(new Vocabulary(vocabFile, true));
 		}
 		recursiveProcess(baseInputPath, baseOutputPath, cwWriter, keepPercent);
 

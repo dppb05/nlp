@@ -127,11 +127,22 @@ public class SimpleDTWDissimGenerator {
 	}
 	
 public static void main(String[] args) throws IOException, REXPMismatchException, REngineException {
-	if (args.length < 1 || args.length > 3) {
-		System.err.println("Should give parent directory of files as argument [plus distance function default: Euclidean and df file (if custom)]");
-		System.exit(-1);
+	int i;
+	File vocabFile = null;
+	File embedFile = null;
+	int vecSize = 50;
+	for(i = 0; i < args.length; ++i) {
+		if(args[i].equals("--vocab")) {
+			vocabFile = new File(args[++i]);
+		} else if(args[i].equals("--embed")) {
+			embedFile = new File(args[++i]);
+		} else if(args[i].equals("--vec-size")) {
+			vecSize = Integer.parseInt(args[++i]);
+		} else {
+			break;
+		}
 	}
-	File parentDir = new File(args[0]);
+	File parentDir = new File(args[i++]);
 	if (!parentDir.isDirectory()) {
 		System.err.println("Argument given is not a directory");
 		System.exit(-2);
@@ -141,17 +152,16 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 		System.exit(-3);
 		
 	}
-	final String distanceFunction = (args.length == 1) ? "Euclidean" : args[1];
+	final String distanceFunction = (i < args.length) ? args[i++] : "Euclidean";
+	System.out.println(distanceFunction);
 	
-	
-	
-	boolean useCustomTfIdf = (args.length == 3);
+	boolean useCustomTfIdf = (i < args.length);
 	
 	File dfFile = null;
 	if (useCustomTfIdf) dfFile = new File(args[2]);
 	File []subFiles = parentDir.listFiles();
 	List<File> clusters = new ArrayList<File>(subFiles.length);
-	for (int i = 0; i < subFiles.length; i++) {
+	for (i = 0; i < subFiles.length; i++) {
 		final File f = subFiles[i];
 		if (f.isDirectory()) {
 			clusters.add(f);
@@ -171,8 +181,18 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 	}
 	//System.out.println("total files: " + allFiles.size());
 
-	Vocabulary vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
-	Embeddings embed = new Embeddings(new File(CWEmbeddingWriter.CW_EMBEDDINGS), vocab, 50);
+	Vocabulary vocab = null;
+	if(vocabFile != null) {
+		vocab = new Vocabulary(vocabFile);
+	} else {
+		vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
+	}
+	Embeddings embed = null;
+	if(embedFile != null) {
+		embed = new Embeddings(embedFile, vocab, vecSize);
+	} else {
+		new Embeddings(new File(CWEmbeddingWriter.CW_EMBEDDINGS), vocab, vecSize);
+	}
 	EnStopWords stopWords = new EnStopWords(vocab);
 	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(Constants._UNK_WORD_ID);
 	TokenIndexDocumentProcessor.DFMapping dfMapping = null;
