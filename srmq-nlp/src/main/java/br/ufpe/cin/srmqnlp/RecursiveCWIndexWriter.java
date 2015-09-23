@@ -54,8 +54,10 @@ public class RecursiveCWIndexWriter {
 			System.err.println("Application does not have write permissions to baseOutputPath");
 			System.exit(-5);
 		}
-		
-		CWEmbeddingWriter cwWriter = new CWEmbeddingWriter(new Vocabulary(vocabFile, true));
+		CWEmbeddingWriter cwWriter = null;
+		if(vocabFile != null) {
+			cwWriter = new CWEmbeddingWriter(new Vocabulary(vocabFile));
+		}
 		recursiveProcess(baseInputPath, baseOutputPath, cwWriter, keepPercent);
 
 	}

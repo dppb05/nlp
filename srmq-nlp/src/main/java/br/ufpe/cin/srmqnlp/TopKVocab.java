@@ -46,7 +46,7 @@ public class TopKVocab {
 					vocabFile = new File(args[++i]);
 					vocab = new Vocabulary(vocabFile);
 				} catch (IOException e) {
-					System.err.println("Error reading vocabulary file " + CWEmbeddingWriter.CW_WORDS + ".");
+					System.err.println("Error reading vocabulary file.");
 					System.exit(1);
 				}
 			} else if(args[i].equals("--embed")) {
