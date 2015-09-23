@@ -183,7 +183,7 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 
 	Vocabulary vocab = null;
 	if(vocabFile != null) {
-		vocab = new Vocabulary(vocabFile);
+		vocab = new Vocabulary(vocabFile, true);
 	} else {
 		vocab = new Vocabulary(new File(CWEmbeddingWriter.CW_WORDS));
 	}
@@ -194,7 +194,8 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 		new Embeddings(new File(CWEmbeddingWriter.CW_EMBEDDINGS), vocab, vecSize);
 	}
 	EnStopWords stopWords = new EnStopWords(vocab);
-	TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(Constants._UNK_WORD_ID);
+		TokenIndexDocumentProcessor docProcessor = new TokenIndexDocumentProcessor(
+				vocabFile != null ? vocab.getUnkWordId() : Constants._UNK_WORD_ID);
 	TokenIndexDocumentProcessor.DFMapping dfMapping = null;
 	if (useCustomTfIdf) dfMapping = docProcessor.generateDFMapping(dfFile);
 	RConnection rConn = new RConnection();
