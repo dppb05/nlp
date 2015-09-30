@@ -92,12 +92,20 @@ public class SimpleLSADissimGenerator {
 			rConn.voidEval("tdmat <- lsa(tdmat)");
 			rConn.voidEval("tdmat <- dist(t(as.textmatrix(tdmat)), method=\""+ distance + "\")");
 			double[][] dmatrix = rConn.eval("as.matrix(tdmat)").asDoubleMatrix();
-			for(double[] row : dmatrix) {
-				for(i = 0; i < row.length-1; ++i) {
-					System.out.print(row[i] + " ");
+			int j;
+			for(i = 0; i < dmatrix.length; ++i) {
+				System.out.print(dmatrix[i][0]);
+				for(j = 1; j <= i; ++j) {
+					System.out.print("," + dmatrix[i][j]);
 				}
-				System.out.println(row[i]);
+				System.out.println();
 			}
+//			for(double[] row : dmatrix) {
+//				for(i = 0; i < row.length-1; ++i) {
+//					System.out.print(row[i] + " ");
+//				}
+//				System.out.println(row[i]);
+//			}
 			rConn.voidEval("rm(tdmat)");
 		} catch (RserveException e) {
 			e.printStackTrace();

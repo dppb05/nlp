@@ -158,7 +158,7 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 	boolean useCustomTfIdf = (i < args.length);
 	
 	File dfFile = null;
-	if (useCustomTfIdf) dfFile = new File(args[2]);
+	if (useCustomTfIdf) dfFile = new File(args[i]);
 	File []subFiles = parentDir.listFiles();
 	List<File> clusters = new ArrayList<File>(subFiles.length);
 	for (i = 0; i < subFiles.length; i++) {
