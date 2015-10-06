@@ -2,7 +2,6 @@ package br.ufpe.cin.srmqnlp;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,13 +9,8 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Scanner;
 import java.util.Set;
 
 import org.rosuda.REngine.REXP;
@@ -77,11 +71,11 @@ public class SimpleLSADissimGenerator {
 			} else {
 				topWords = TopKVocab.topKWords(allFiles, null, k, true);
 				Arrays.sort(topWords);
-				PrintWriter writer = new PrintWriter(new FileOutputStream("/home/diogo/Documents/Universidade/mestrado/data/out.lst"));
-				for(String s : topWords) {
-					writer.write(s + "\n");
-				}
-				writer.close();
+//				PrintWriter writer = new PrintWriter(new FileOutputStream("/home/diogo/Documents/Universidade/mestrado/data/out.lst"));
+//				for(String s : topWords) {
+//					writer.write(s + "\n");
+//				}
+//				writer.close();
 			}
 			TermDocMatrix tdMatrix = new TermDocMatrix(topWords, allFiles);
 			RConnection rConn = new RConnection();

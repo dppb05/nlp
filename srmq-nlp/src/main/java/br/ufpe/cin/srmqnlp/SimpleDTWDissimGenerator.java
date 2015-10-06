@@ -111,7 +111,7 @@ public class SimpleDTWDissimGenerator {
 														"val = xa[i] - xb[i]; " +
 													"} " +
 													"if(val > chebDist) { " +
-														"chebdist = val; " +
+														"chebDist = val; " +
 													"} " +
 												"} "						   +
 												"const double wfdfA = (xa[0] > 0) ? (1.0 + log(xa[0])) : 0.0; " +
