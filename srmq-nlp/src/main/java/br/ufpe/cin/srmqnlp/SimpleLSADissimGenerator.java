@@ -94,12 +94,6 @@ public class SimpleLSADissimGenerator {
 				}
 				System.out.println();
 			}
-//			for(double[] row : dmatrix) {
-//				for(i = 0; i < row.length-1; ++i) {
-//					System.out.print(row[i] + " ");
-//				}
-//				System.out.println(row[i]);
-//			}
 			rConn.voidEval("rm(tdmat)");
 		} catch (RserveException e) {
 			e.printStackTrace();

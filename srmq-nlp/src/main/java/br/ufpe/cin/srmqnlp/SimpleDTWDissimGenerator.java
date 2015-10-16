@@ -16,12 +16,12 @@ import org.rosuda.REngine.Rserve.RConnection;
 
 public class SimpleDTWDissimGenerator {
 	private static Map<String, String[]> customDistFunctions;
-	// accepted distances: everything R (Euclidian, cosine...); meanWfIdfEuclidian, meanWfIdfCosineDist
+	// accepted distances: everything R (Euclidean, cosine...); meanWfIdfEuclidean, meanWfIdfCosineDist
 	static {
 		customDistFunctions = new HashMap<String, String[]>(); // maps from function name to function code
-		{ // Custom Euclidian with log(tf)*idf weighting (mean of the two words)
-			String meanWfIdfEuclidian = "meanWfIdfEuclidian";
-			String[] meanWfIdfEuclidianCode = {"src <- '" +  
+		{ // Custom Euclidean with log(tf)*idf weighting (mean of the two words)
+			String meanWfIdfEuclidean = "meanWfIdfEuclidean";
+			String[] meanWfIdfEuclideanCode = {"src <- '" +  
 												"Rcpp::NumericVector xa(a); " +
 												"Rcpp::NumericVector xb(b); " +
 												"int n = xa.size(); " +
@@ -35,10 +35,10 @@ public class SimpleDTWDissimGenerator {
 												"const double meanWfIdf = ((wfdfA * xa[1]) + (wfdfB * xb[1]))*0.5; " +
 												"return Rcpp::wrap(meanWfIdf * sqrt(dist)); " +
 												"'",
-											"meanWfIdfEuclidian <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
-											"pr_DB$set_entry(FUN = meanWfIdfEuclidian, names = c(\"test_meanWfIdfEuclidian\", \"meanWfIdfEuclidian\"))",
+											"meanWfIdfEuclidean <- cxxfunction(signature(a = \"numeric\", b = \"numeric\"), src, plugin=\"Rcpp\")",
+											"pr_DB$set_entry(FUN = meanWfIdfEuclidean, names = c(\"test_meanWfIdfEuclidean\", \"meanWfIdfEuclidean\"))",
 											"rm(src)"};
-			customDistFunctions.put(meanWfIdfEuclidian, meanWfIdfEuclidianCode);
+			customDistFunctions.put(meanWfIdfEuclidean, meanWfIdfEuclideanCode);
 		}
 		
 		{ // Custom Cosine dist with log(tf)*idf weighting (mean of the two words)
