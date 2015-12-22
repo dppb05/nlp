@@ -131,6 +131,7 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 	File vocabFile = null;
 	File embedFile = null;
 	int vecSize = 50;
+	int rPort = -1;
 	for(i = 0; i < args.length; ++i) {
 		if(args[i].equals("--vocab")) {
 			vocabFile = new File(args[++i]);
@@ -138,6 +139,8 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 			embedFile = new File(args[++i]);
 		} else if(args[i].equals("--vec-size")) {
 			vecSize = Integer.parseInt(args[++i]);
+		} else if(args[i].equals("--rport")) {
+			rPort = Integer.parseInt(args[++i]);
 		} else {
 			break;
 		}
@@ -153,7 +156,6 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 		
 	}
 	final String distanceFunction = (i < args.length) ? args[i++] : "Euclidean";
-	System.out.println(distanceFunction);
 	
 	boolean useCustomTfIdf = (i < args.length);
 	
@@ -198,7 +200,16 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 				vocabFile != null ? vocab.getUnkWordId() : Constants._UNK_WORD_ID);
 	TokenIndexDocumentProcessor.DFMapping dfMapping = null;
 	if (useCustomTfIdf) dfMapping = docProcessor.generateDFMapping(dfFile);
-	RConnection rConn = new RConnection();
+	RConnection rConn = null;
+	if(rPort >= 0) {
+		rConn = new RConnection("localhost", rPort);
+	} else {
+		rConn = new RConnection();
+	}
+	if(!rConn.isConnected()) {
+		System.err.println("Could not connect to the Rserve");
+		System.exit(-4);
+	}
 	rConn.voidEval("library(\"dtw\")");
 	if (useCustomTfIdf) { 
 		rConn.voidEval("library(\"inline\")");
@@ -250,10 +261,10 @@ public static void main(String[] args) throws IOException, REXPMismatchException
 			}
 			rConn.voidEval("rm(otherEmbeds)");
 		}
-		
 		System.out.println("0.0");
 		rConn.voidEval("rm(myEmbeds)");
 	}
+	rConn.shutdown();
 	rConn.close();
 } 
 
