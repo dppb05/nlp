@@ -19,6 +19,7 @@ public class NormMtxPostProcessor {
 	public static void main(String[] args) {
 		if(args.length != 2) {
 			System.err.println("Invalid args. Must pass dissimMtxFile and number of objects.");
+			System.exit(1);
 		}
 		File dissimMtxFile = new File(args[0]);
 		if(!dissimMtxFile.isFile()) {

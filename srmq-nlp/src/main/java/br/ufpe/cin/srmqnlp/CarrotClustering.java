@@ -27,22 +27,25 @@ public class CarrotClustering {
 	private int numberOfObjects;
 	private String basePath;
 	private String dissimFile;
+	private int numInit;
 	
-	public CarrotClustering(int numberOfObjects, String basePath, String dissimFile) {
+	public CarrotClustering(int numberOfObjects, String basePath, String dissimFile, int numInit) {
 		this.numberOfObjects = numberOfObjects;
 		this.basePath = basePath;
 		this.dissimFile = dissimFile;
+		this.numInit = numInit;
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length != 3) {
-			System.err.println("Should give 3 arguments: numberOfObjects basePath dissimFile");
+		if (args.length != 4) {
+			System.err.println("Should give 4 arguments: numberOfObjects basePath dissimFile numInit");
 			System.exit(-1);
 		}
 		final int nObjects = Integer.parseInt(args[0]);
 		final String baseP = args[1];
 		final String dissimF = args[2];
-		CarrotClustering cClust = new CarrotClustering(nObjects, baseP, dissimF);
+		final int nInit = Integer.parseInt(args[3]);
+		CarrotClustering cClust = new CarrotClustering(nObjects, baseP, dissimF, nInit);
 		cClust.cluster();
 		System.exit(0);
 
@@ -82,9 +85,31 @@ public class CarrotClustering {
 			System.out.println("INFO: We have " + docsToCluster.size() + " documents to cluster");
 			attributes.put(CommonAttributesDescriptor.Keys.DOCUMENTS, new ArrayList<Document>(docsToCluster));
 			attributes.put("BisectingKMeansClusteringAlgorithm.clusterCount", k);
-			ProcessingResult result = controller.process(attributes, BisectingKMeansClusteringAlgorithm.class);
+			ProcessingResult result = null;
+			ProcessingResult bestResult = null;
+			int bestInst = 0;
+			double maxj = -1.0;
+			double curj;
+			for(int i = 1; i <= this.numInit; ++i) {
+				System.out.println("Running " + i);
+				result = controller.process(attributes, BisectingKMeansClusteringAlgorithm.class);
+				if(maxj < 0) {
+					bestInst = 1;
+					maxj = result.getAttribute("energia");
+					bestResult = result;
+					System.out.println("Energy: " + maxj);
+				} else {
+					curj = result.getAttribute("energia");
+					System.out.println("Energy: " + curj);
+					if(curj > maxj) {
+						bestInst = i;
+						maxj = curj;
+						bestResult = result;
+					}
+				}
+			}
 			timeInMilis = System.currentTimeMillis() - timeInMilis;
-			List<Cluster> clusters = result.getClusters();
+			List<Cluster> clusters = bestResult.getClusters();
 			//CarrotConsoleFormatter.displayClusters(clusters);
 			int docCount = 0;
 			ConfusionMatrix confusionMatrix = new ConfusionMatrix(k, aPrioriNumber);
@@ -113,9 +138,11 @@ public class CarrotClustering {
 				outStream = new PrintStream(runner.outputFile, "UTF-8");
 			}*/
 			outStream = System.out;
+			outStream.println("Best energy in instance " + bestInst);
 			outStream.println("------CONFUSION MATRIX-------");
 			confusionMatrix.printMatrix(outStream);
 			outStream.println("-----------------------------");
+			outStream.println(">>>>>>>>>>>> The Energy    is: "+ maxj);
 			outStream.println(">>>>>>>>>>>> The F-Measure is: "+ confusionMatrix.fMeasureGlobal());
 			outStream.println(">>>>>>>>>>>> The CR-Index  is: "+ confusionMatrix.CRIndex());
 			outStream.println(">>>>>>>>>>>> OERC Index    is: " + confusionMatrix.OERCIndex());
