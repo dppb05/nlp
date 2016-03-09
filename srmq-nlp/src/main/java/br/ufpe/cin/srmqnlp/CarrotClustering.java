@@ -27,33 +27,37 @@ public class CarrotClustering {
 	private int numberOfObjects;
 	private String basePath;
 	private String dissimFile;
+	private int k;
+	private int kPriori;
 	private int numInit;
 	
-	public CarrotClustering(int numberOfObjects, String basePath, String dissimFile, int numInit) {
+	public CarrotClustering(int numberOfObjects, String basePath, String dissimFile, int k, int kPriori, int numInit) {
 		this.numberOfObjects = numberOfObjects;
 		this.basePath = basePath;
 		this.dissimFile = dissimFile;
+		this.k = k;
+		this.kPriori = kPriori;
 		this.numInit = numInit;
 	}
 
 	public static void main(String[] args) throws IOException {
-		if (args.length != 4) {
-			System.err.println("Should give 4 arguments: numberOfObjects basePath dissimFile numInit");
+		if (args.length != 6) {
+			System.err.println("Should give 6 arguments: numberOfObjects basePath dissimFile k kPriori numInit");
 			System.exit(-1);
 		}
 		final int nObjects = Integer.parseInt(args[0]);
 		final String baseP = args[1];
 		final String dissimF = args[2];
-		final int nInit = Integer.parseInt(args[3]);
-		CarrotClustering cClust = new CarrotClustering(nObjects, baseP, dissimF, nInit);
+		final int k = Integer.parseInt(args[3]);
+		final int kPriori = Integer.parseInt(args[4]);
+		final int nInit = Integer.parseInt(args[5]);
+		CarrotClustering cClust = new CarrotClustering(nObjects, baseP, dissimF, k, kPriori, nInit);
 		cClust.cluster();
 		System.exit(0);
 
 	}
 	
 	public void cluster() throws IOException {
-		final int k = 20;
-		final int aPrioriNumber = 20;
 		Map<Document, String> docsAndIds = new HashMap<Document, String>(numberOfObjects);
 		BufferedReader bufr = null;
 		Map<String, Pair<Integer, String>> idDocument2IndexDocumentAndIdClass = new HashMap<String, Pair<Integer, String>>(numberOfObjects);
@@ -112,7 +116,7 @@ public class CarrotClustering {
 			List<Cluster> clusters = bestResult.getClusters();
 			//CarrotConsoleFormatter.displayClusters(clusters);
 			int docCount = 0;
-			ConfusionMatrix confusionMatrix = new ConfusionMatrix(k, aPrioriNumber);
+			ConfusionMatrix confusionMatrix = new ConfusionMatrix(k, this.kPriori);
 			for (int i = 0; i < clusters.size(); i++) {
 				final Cluster clusterI = clusters.get(i);
 				if (clusterI.getSubclusters() != null && clusterI.getSubclusters().size() > 0) {
